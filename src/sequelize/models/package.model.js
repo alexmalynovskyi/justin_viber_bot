@@ -36,14 +36,15 @@ module.exports = (sequelize, dataTypes) => {
         allowNull: true
       },
       date: {
-        type: dataTypes.DATE,
+        type: dataTypes.STRING,
         allowNull: true
       }
     },
     {
       sequelize,
       modelName: 'package',
-      indexes: [{ unique: true, fields: ['ttn'] }]
+      indexes: [{ unique: true, fields: ['ttn'] }],
+      timestamps: false,
     }
   );
 

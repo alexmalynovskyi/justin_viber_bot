@@ -29,7 +29,8 @@ module.exports = (sequelize, dataTypes) => {
     }, {
       modelName: 'user',
       sequelize,
-      indexes: [{ unique: true, fields: ['externalId']}]
+      indexes: [{ unique: true, fields: ['externalId']}],
+      timestamps: false,
   });
 
   User.associate = (models) => {
@@ -38,6 +39,6 @@ module.exports = (sequelize, dataTypes) => {
       as: 'packages'
     });
   }
-  
+
   return User;
 }

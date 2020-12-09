@@ -11,7 +11,7 @@ const CRON_EXPRESSION = {
 };
 
 module.exports = (bot) => {
-  const cron = schedule.scheduleJob(CRON_EXPRESSION.REPEAT_EACH_5_MINUTES, async () => {
+  const cron = schedule.scheduleJob(CRON_EXPRESSION.REPEAT_EACH_HOUR, async () => {
     const users = await UserService.getAllUserWithExtendedData();
 
     if (users && users.length > 0) {
@@ -25,12 +25,12 @@ module.exports = (bot) => {
         if (packages && packages.length > 0) {
           packages.forEach( async pck => {
             const { ttn } = pck.dataValues;
-            
+
             try {
               const justinPackageInfo = await JustinService.getPackageInfo(+ttn);
               const updatedPackage = await PackageService.upsertPackage(
-                { 
-                  ...justinPackageInfo, 
+                {
+                  ...justinPackageInfo,
                   userId: user.id,
                   ttn
                 }

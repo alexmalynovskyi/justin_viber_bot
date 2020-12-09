@@ -1,10 +1,12 @@
 const ViberBot = require('viber-bot').Bot,
   BotEvents = require('viber-bot').Events,
   TextMessage = require('viber-bot').Message.Text,
+  KeyboardMesasge = require('viber-bot').Message.Keyboard,
   express = require('express');
 import { UserService } from './service/user.service';
 import { JustinService } from './service/justin.service';
 import { PackageService } from './service/package.service';
+import KeyboardMessageBuilder from './utils/keyboard.message.builder';
 
 const app = express();
 
@@ -24,7 +26,52 @@ console.log(BotEvents.SUBSCRIBED);
 bot.on(BotEvents.SUBSCRIBED, response => {
   response.send(new TextMessage(`Hi there ${response.userProfile.name}. I am ${bot.name}! Feel free to ask me anything.`));
 });
-bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {  
+
+bot.onTextMessage(/all/im, async (message, response) => {
+  const { id } = response.userProfile;
+  const user = await UserService.getUserWithExtendedData(id);
+  const usrPacakges = user.dataValues.packages;
+  console.log('executed in row handler');
+
+  if (usrPacakges && usrPacakges.length > 0) {
+    const updatedPackages = [];
+
+    for(let index = 0; index < usrPacakges.length; index++) {
+      const pck = await JustinService.getPackageInfo(usrPacakges[index].ttn);
+
+      if (pck) {
+        const {
+          title,
+          date,
+          text,
+          status
+        } = pck;
+
+        const updatedPck = await PackageService.upsertPackage({
+          title,
+          date,
+          text,
+          status,
+          ttn: usrPacakges[index].ttn,
+          userId: user.id
+        });
+
+        if (updatedPck[0] && updatedPck[0].dataValues) {
+          updatedPackages.push(updatedPck[0].dataValues);
+        }
+      }
+    }
+
+    const keyboardMessageBuilder = new KeyboardMessageBuilder(updatedPackages);
+    const keyboard = keyboardMessageBuilder.buildKeyboard();
+
+    response.send(new KeyboardMesasge(keyboard)).catch(error => {
+      console.log(error);
+    })
+  }
+});
+
+bot.onTextMessage(/^[1-9]+$/im, async (message, response) => {
   try {
     const user = await UserService.getUserById(response.userProfile.id, response.userProfile);
     const pck = await JustinService.getPackageInfo(message.text);
@@ -63,13 +110,9 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
 
 });
 
-bot.onTextMessage(/./i, (response) => {
-  console.log('on any text', response.userProfile);
-});
+
 const PORT = process.env.PORT || 3000;
 app.use("/viber/webhook", bot.middleware());
-
-
 
 app.init = async () => {
   return new Promise((resolve, reject) => {
@@ -85,5 +128,9 @@ app.init = async () => {
     });
   });
 }
+
+app.use((err, req, res, next) => {
+  console.log(err);
+})
 
 module.exports = app;

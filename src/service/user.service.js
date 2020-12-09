@@ -6,7 +6,7 @@ export class UserService {
     return db.user.findOrCreate({
       where: {
         externalId
-      }, 
+      },
       defaults: {
         externalId: id,
           name,
@@ -16,12 +16,27 @@ export class UserService {
     });
   }
 
-  static getAllUserWithExtendedData() {
-    return db.user.findAll({
+  static getUserWithExtendedData() {
+    return db.user.findOne({
       include: [{
         model: db.package,
         as: 'packages',
-        required: false
+        required: false,
+        attributes: ['description', 'status', 'title', 'ttn', 'text', 'date'],
+      }]
+    });
+  }
+
+  static getAllUserWithExtendedData(externalId) {
+    return db.user.findAll({
+      where: {
+        externalId
+      },
+      include: [{
+        model: db.package,
+        as: 'packages',
+        required: false,
+        attributes: ['description', 'status', 'title', 'ttn', 'text', 'date'],
       }]
     });
   }
