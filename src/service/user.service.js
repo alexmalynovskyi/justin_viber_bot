@@ -27,11 +27,8 @@ export class UserService {
     });
   }
 
-  static getAllUserWithExtendedData(externalId) {
+  static getAllUserWithExtendedData() {
     return db.user.findAll({
-      where: {
-        externalId
-      },
       include: [{
         model: db.package,
         as: 'packages',

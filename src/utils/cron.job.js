@@ -7,7 +7,7 @@ const TextMessage = require('viber-bot').Message.Text;
 
 const CRON_EXPRESSION = {
   REPEAT_EACH_HOUR: '0 * * * *',
-  REPEAT_EACH_5_MINUTES: '*/1 * * * *'
+  REPEAT_EACH_1_MINUTES: '* * * * *'
 };
 
 module.exports = (bot) => {
@@ -24,7 +24,13 @@ module.exports = (bot) => {
 
         if (packages && packages.length > 0) {
           packages.forEach( async pck => {
-            const { ttn } = pck.dataValues;
+            const {
+              ttn,
+              status: prevStatus,
+              date: prevDate,
+              description: prevDescription,
+              title: prevTitle
+            } = pck.dataValues;
 
             try {
               const justinPackageInfo = await JustinService.getPackageInfo(+ttn);
@@ -35,8 +41,18 @@ module.exports = (bot) => {
                   ttn
                 }
               );
+              const { description, date, status, text, title } = updatedPackage[0].dataValues;
 
-              bot.sendMessage(userProfile, new TextMessage(messageBuilder(updatedPackage[0].dataValues)));
+              if (prevDescription !== description || prevDate !== date || status !== prevStatus || prevTitle !== title) {
+                bot.sendMessage(userProfile, new TextMessage(messageBuilder({
+                  description,
+                  ttn,
+                  date,
+                  status,
+                  text,
+                  title
+                })));
+              }
             } catch(error) {
               console.log(error);
             }

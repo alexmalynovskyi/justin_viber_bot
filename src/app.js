@@ -6,7 +6,17 @@ const ViberBot = require('viber-bot').Bot,
 import { UserService } from './service/user.service';
 import { JustinService } from './service/justin.service';
 import { PackageService } from './service/package.service';
-import KeyboardMessageBuilder from './utils/keyboard.message.builder';
+import { ViberBotService } from './service/viber.bot.service';
+import { messageBuilder } from './utils/message.builder';
+import { USER_MESSAGE, BOT_MESSAGE_PATTERNS } from './utils/constants';
+
+const sendMessage = (res, textMessageArguments, keyboard) => {
+  if (!keyboard || keyboard.Buttons.length === 0) {
+    return res.send(new TextMessage(textMessageArguments));
+  } else {
+    return res.send(new TextMessage(textMessageArguments, keyboard));
+  }
+}
 
 const app = express();
 
@@ -22,59 +32,56 @@ const bot = new ViberBot({
   name: "justin bot",
   avatar: "https://upload.wikimedia.org/wikipedia/commons/3/3d/Katze_weiss.png"
 });
-console.log(BotEvents.SUBSCRIBED);
+
+bot.onSubscribe(response => {
+  response.send(new TextMessage(USER_MESSAGE.USER_GUID));
+});
+
 bot.on(BotEvents.SUBSCRIBED, response => {
-  response.send(new TextMessage(`Hi there ${response.userProfile.name}. I am ${bot.name}! Feel free to ask me anything.`));
+  console.log(`Subscribed: ${response.userProfile.name}`)
+  response.send(new TextMessage(USER_MESSAGE.USER_GUID));
 });
 
-bot.onTextMessage(/all/im, async (message, response) => {
+bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) =>
+	onFinish(new TextMessage(USER_MESSAGE.USER_GUID)));
+
+bot.onTextMessage(BOT_MESSAGE_PATTERNS.INFO, async(message, response) => {
+  response.send(new TextMessage(USER_MESSAGE.USER_GUID));
+});
+
+bot.onTextMessage(BOT_MESSAGE_PATTERNS.DELETE_PACKAGE, async (message, response) => {
+  const ttn = message.text.split(' ').pop();
   const { id } = response.userProfile;
-  const user = await UserService.getUserWithExtendedData(id);
-  const usrPacakges = user.dataValues.packages;
-  console.log('executed in row handler');
 
-  if (usrPacakges && usrPacakges.length > 0) {
-    const updatedPackages = [];
-
-    for(let index = 0; index < usrPacakges.length; index++) {
-      const pck = await JustinService.getPackageInfo(usrPacakges[index].ttn);
-
-      if (pck) {
-        const {
-          title,
-          date,
-          text,
-          status
-        } = pck;
-
-        const updatedPck = await PackageService.upsertPackage({
-          title,
-          date,
-          text,
-          status,
-          ttn: usrPacakges[index].ttn,
-          userId: user.id
-        });
-
-        if (updatedPck[0] && updatedPck[0].dataValues) {
-          updatedPackages.push(updatedPck[0].dataValues);
-        }
-      }
-    }
-
-    const keyboardMessageBuilder = new KeyboardMessageBuilder(updatedPackages);
-    const keyboard = keyboardMessageBuilder.buildKeyboard();
-
-    response.send(new KeyboardMesasge(keyboard)).catch(error => {
-      console.log(error);
-    })
+  try {
+    await PackageService.deletePackageByTtn({
+      ttn
+    });
+  } catch(e) {
+    console.log('Error :', e);
   }
+
+  const keyboard = await ViberBotService.buildUserKeyboardData(id);
+  sendMessage(response, 'package has been  successfully deleted', keyboard)
+    .catch(error => {
+      console.log(error);
+    });
 });
 
-bot.onTextMessage(/^[1-9]+$/im, async (message, response) => {
+bot.onTextMessage(BOT_MESSAGE_PATTERNS.GET_ALL_USER_PACKAGES, async (message, response) => {
+  const { id } = response.userProfile;
+  const keyboard = await ViberBotService.buildUserKeyboardData(id);
+  response.send(new KeyboardMesasge(keyboard)).catch(error => {
+    console.log(error);
+  })
+});
+
+bot.onTextMessage(BOT_MESSAGE_PATTERNS.PACKAGE_TTN, async (message, response) => {
   try {
-    const user = await UserService.getUserById(response.userProfile.id, response.userProfile);
+    const { id } = response.userProfile;
+    const user = await UserService.getUserById(id, response.userProfile);
     const pck = await JustinService.getPackageInfo(message.text);
+    const keyboard = await ViberBotService.buildUserKeyboardData(id);
 
     if (pck) {
       const {
@@ -93,23 +100,23 @@ bot.onTextMessage(/^[1-9]+$/im, async (message, response) => {
         userId: user[0].id
       });
 
-      response.send([
-        new TextMessage(`
-        Information about you delivery.
-        title:  ${title}
-        date: ${date}
-        status: ${status}
-        text: ${text}
-        `)
-      ]);
+      sendMessage(response,
+        messageBuilder({
+          title,
+          date,
+          text,
+          status,
+          ttn: message.text,
+        })
+      , keyboard)
+        .catch(error => {
+          console.log(error);
+        });
     }
   } catch(e) {
     console.log(e);
-    // response.send(new RichMediaMessage(SAMPLE_RICH_MEDIA));
   }
-
 });
-
 
 const PORT = process.env.PORT || 3000;
 app.use("/viber/webhook", bot.middleware());
@@ -117,20 +124,13 @@ app.use("/viber/webhook", bot.middleware());
 app.init = async () => {
   return new Promise((resolve, reject) => {
     app.listen(PORT, () => {
-      console.log(`Application running on port: ${PORT}`);
       bot.setWebhook(`${process.env.EXPOSE_URL}/viber/webhook`)
         .catch(error => {
-        console.log('Can not set webhook on following server. Is it running?');
-        console.error(error);
         reject(error);
         })
         .then(() => resolve(bot));
     });
   });
 }
-
-app.use((err, req, res, next) => {
-  console.log(err);
-})
 
 module.exports = app;

@@ -8,11 +8,11 @@ export class JustinService {
     const cookieCsrfToken = data.headers['set-cookie'][0].split(' ')[0];
     const sessionCookie = data.headers['set-cookie'][1].split(' ')[0];
     const domParserInstance = new DomParser(data.body);
-  
+
     const csrfToken = domParserInstance.getAttr('meta[name=csrf-token]', 'content');
     const deliveryData = await request(
       getPostOptions(
-        csrfToken, 
+        csrfToken,
         `${cookieCsrfToken} ${sessionCookie.substring(0, sessionCookie.length - 1)}`,
         ttn
       )

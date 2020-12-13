@@ -10,4 +10,12 @@ export class PackageService {
       }
     );
   }
+
+  static deletePackageByTtn({ ttn }) {
+    return db.package.destroy({
+      where: {
+        ttn
+      }
+    });
+  }
 }
