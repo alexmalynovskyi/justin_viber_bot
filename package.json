@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "NODE_ENV=development nodemon --inspect --exec babel-node ./src/index.js"
+    "start": "NODE_ENV=development nodemon --inspect --exec babel-node ./src/index.js",
+    "start:prod": "NODE_ENV=production node ./build/index.js",
+    "build": "babel src -d build"
+  },
+  "engines": {
+    "node": "10.16.0"
   },
   "keywords": [],
   "author": "",

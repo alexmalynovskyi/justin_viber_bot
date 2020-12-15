@@ -1,3 +1,4 @@
+'use strict';
 
 module.exports = {
   development: {
@@ -6,7 +7,7 @@ module.exports = {
     database: process.env.DEV_DB_NAME,
     host: process.env.DEV_DB_HOSTNAME,
     port: process.env.DEV_DB_PORT,
-    dialect: 'postgres',
+    dialect: 'postgres'
   },
   test: {
     username: process.env.CI_DB_USERNAME,
@@ -14,7 +15,7 @@ module.exports = {
     database: process.env.CI_DB_NAME,
     port: 5432,
     host: '127.0.0.1',
-    dialect: 'postgres',
+    dialect: 'postgres'
   },
   production: {
     username: process.env.PROD_DB_USERNAME,
@@ -22,6 +23,6 @@ module.exports = {
     database: process.env.PROD_DB_NAME,
     host: process.env.PROD_DB_HOSTNAME,
     port: process.env.PROD_DB_PORT,
-    dialect: 'postgres',
-  },
+    dialect: 'postgres'
+  }
 };
