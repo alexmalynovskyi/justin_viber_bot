@@ -8,7 +8,7 @@ const bootstrap = async() => {
     await db.init().catch((err) => console.error(`Failed to connect to DB with error ${err.message}`));
     const bot = await app.init(PORT)
       .catch(error => {
-        cosnole.log(JSON.stringify(process.env, null, 2));
+        console.log(JSON.stringify(process.env, null, 2));
         console.error(error);
         process.exit(0);
       });
