@@ -12,8 +12,8 @@ db.init = async () => {
   return new Promise((resolve, reject) => {
     let sequelize;
 
-    if (config.use_env_variable) {
-      sequelize = new Sequelize(process.env[config.use_env_variable], config);
+    if (config.databaseUrl) {
+      sequelize = new Sequelize(config.databaseUrl, config);
     } else {
       sequelize = new Sequelize(config.database, config.username, config.password, config);
     }

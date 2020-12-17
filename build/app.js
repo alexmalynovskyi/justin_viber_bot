@@ -122,12 +122,11 @@ bot.onTextMessage(_constants.BOT_MESSAGE_PATTERNS.PACKAGE_TTN, async (message, r
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.use("/viber/webhook", bot.middleware());
 
-app.init = async () => {
+app.init = async port => {
   return new Promise((resolve, reject) => {
-    app.listen(PORT, () => {
+    app.listen(port, () => {
       bot.setWebhook(`${process.env.EXPOSE_URL}/viber/webhook`).catch(error => {
         reject(error);
       }).then(() => resolve(bot));
